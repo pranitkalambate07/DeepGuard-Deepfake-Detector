@@ -50,5 +50,12 @@ Evaluated on a strictly isolated test set containing highly realistic manipulate
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/YourUsername/DeepGuard.git](https://github.com/YourUsername/DeepGuard.git)
+git clone [https://github.com/pranitkalambate07/DeepGuard-Deepfake-Detector.git](https://github.com/pranitkalambate07/DeepGuard-Deepfake-Detector.git)
 cd DeepGuard
+
+
+
+
+
+
+
