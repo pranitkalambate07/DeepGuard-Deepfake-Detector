@@ -1,14 +1,6 @@
 import os
 import warnings
 import logging
-
-# --- SILENCER ---
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-warnings.filterwarnings('ignore')
-import tensorflow as tf
-
-tf.get_logger().setLevel(logging.ERROR)
-
 import streamlit as st
 import cv2
 import numpy as np
@@ -17,7 +9,14 @@ from mtcnn import MTCNN
 from tensorflow.keras.models import load_model
 from tensorflow.keras.applications.xception import preprocess_input
 
-# Numpy Fix
+# --- SILENCER & LOGGING SETUP ---
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+warnings.filterwarnings('ignore')
+import tensorflow as tf
+
+tf.get_logger().setLevel(logging.ERROR)
+
+# Numpy Version Fix (For Compatibility)
 try:
     np.int = np.int32
 except:
@@ -25,7 +24,6 @@ except:
 
 # --- 1. PAGE SETUP & DEFAULT THEME ---
 st.set_page_config(page_title="DeepGuard | AI Detector", page_icon="🛡️", layout="centered")
-
 
 def set_theme(bg_color, accent_color):
     st.markdown(f"""
@@ -36,7 +34,7 @@ def set_theme(bg_color, accent_color):
     .nav-title span {{ color: {accent_color}; }}
     .nav-links {{ margin-top: 8px; font-size: 15px; color: #A0AEC0; font-weight: bold; }}
 
-    /* 🎬 VIDEO SIZE FIX (No Scrolling Needed!) */
+    /* 🎬 VIDEO SIZE FIX (Centered & Responsive) */
     video {{
         max-height: 350px !important; 
         border-radius: 10px;
@@ -46,25 +44,24 @@ def set_theme(bg_color, accent_color):
     </style>
     """, unsafe_allow_html=True)
 
-
+# Set Default Theme
 set_theme("#050A1F", "#00BFFF")
 
 # --- 2. CUSTOM NAVBAR ---
 st.markdown("""
 <div class="nav-bar">
     <p class="nav-title">🛡️ DeepGuard <span>Security Terminal</span></p>
-    <p class="nav-links">📞 Contact: admin@deepguard.ai</p>
+    <p class="nav-links">👨‍💻 Developed by: Pranit Kalambate</p>
 </div>
 """, unsafe_allow_html=True)
 
-
-# --- 3. LOAD MODEL ---
+# --- 3. LOAD MODEL & DETECTOR ---
 @st.cache_resource
 def load_deepfake_model():
+    # Load the custom Xception model and MTCNN detector
     model = load_model('deepguard_best_model.h5')
     detector = MTCNN()
     return model, detector
-
 
 try:
     model, detector = load_deepfake_model()
@@ -73,7 +70,7 @@ except Exception as e:
     st.error(f"System Error: {e}")
     model_loaded = False
 
-# --- 4. MAIN SCANNER ---
+# --- 4. MAIN SCANNER LOGIC ---
 if model_loaded:
     uploaded_file = st.file_uploader("Drop Media for Inspection", type=["mp4", "avi", "mov"])
 
@@ -83,6 +80,7 @@ if model_loaded:
         if st.button("🚨 INITIATE SCAN", use_container_width=True):
 
             with st.spinner("Decrypting and scanning frames..."):
+                # Save uploaded file to a temporary path for processing
                 tfile = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
                 tfile.write(uploaded_file.read())
                 video_path = tfile.name
@@ -100,7 +98,7 @@ if model_loaded:
                     if not ret:
                         break
 
-                    # Har 10th frame scan kar (Synced with the 95% accuracy batch test)
+                    # Analyze every 10th frame (Optimized for speed & accuracy)
                     if frame_count % 10 == 0:
                         status_box.info(f"Analyzing Frame Hash: {frame_count} / {total_frames}...")
                         try:
@@ -131,24 +129,24 @@ if model_loaded:
                 status_box.empty()
                 progress_bar.empty()
 
-                # --- 5. THE 95% ACCURACY DUAL-ENGINE LOGIC ---
+                # --- 5. DUAL-ENGINE VALIDATION LOGIC ---
                 if len(predictions) == 0:
-                    st.warning("⚠️ Scan Failed: No clear faces detected.")
+                    st.warning("⚠️ Scan Failed: No clear faces detected in the video.")
                 else:
-                    # 1. Average Score Check
+                    # Metric 1: Average Probability Score
                     avg_score = np.mean(predictions)
 
-                    # 2. Ratio Check (More strict: if even 35% frames look fake -> mark as Fake)
+                    # Metric 2: Fake Frame Ratio (Threshold > 35%)
                     fake_frames_count = sum(1 for score in predictions if score < 0.55)
                     fake_ratio = fake_frames_count / len(predictions)
 
                     st.markdown("---")
 
-                    # If average is low OR too many fake frames exist -> IT'S A FAKE
+                    # Decision Logic: If average score is low OR fake ratio is high -> Classified as FAKE
                     if avg_score < 0.55 or fake_ratio > 0.35:
                         set_theme("#1E0505", "#FF4B4B")
 
-                        # Math for confidence
+                        # Calculate Confidence Score
                         confidence = max(fake_ratio * 100, (1 - avg_score) * 100)
 
                         st.markdown("<h2 style='text-align: center; color: #FF4B4B;'>🚨 DEEPFAKE DETECTED!</h2>",

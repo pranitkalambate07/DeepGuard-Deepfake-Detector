@@ -1,19 +1,17 @@
 import os
 import warnings
 import logging
-
-# --- SILENCER ---
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-warnings.filterwarnings('ignore')
-import tensorflow as tf
-
-tf.get_logger().setLevel(logging.ERROR)
-
 import cv2
 import numpy as np
 from mtcnn import MTCNN
 from tensorflow.keras.models import load_model
 from tensorflow.keras.applications.xception import preprocess_input
+import tensorflow as tf
+
+# --- SILENCER ---
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+warnings.filterwarnings('ignore')
+tf.get_logger().setLevel(logging.ERROR)
 
 # Numpy Fix
 try:
@@ -22,9 +20,9 @@ except:
     pass
 
 # ==========================================
-# 📂 FOLDERS SETTING
+# 📂 TEST DIRECTORY CONFIGURATION
 # ==========================================
-# Tula je videos test karayche ahet, te hya don folders madhe thev
+# Define paths for test videos (Real and Fake)
 REAL_VIDEOS_FOLDER = r"D:\DeepGuard\Test_Videos\Real_Videos"
 FAKE_VIDEOS_FOLDER = r"D:\DeepGuard\Test_Videos\Fake_Videos"
 
@@ -32,7 +30,6 @@ print("\n⚙️ Loading DeepGuard Model & MTCNN... Please wait.")
 model = load_model('deepguard_best_model.h5')
 detector = MTCNN()
 print("✅ Model Loaded Successfully!\n")
-
 
 def scan_video(video_path):
     cap = cv2.VideoCapture(video_path)
@@ -44,7 +41,7 @@ def scan_video(video_path):
         if not ret:
             break
 
-        # Check every 10th frame (Sync with app.py)
+        # Scan every 10th frame (Synchronized with App logic)
         if frame_count % 10 == 0:
             try:
                 faces = detector.detect_faces(frame)
@@ -70,21 +67,20 @@ def scan_video(video_path):
     cap.release()
 
     if len(predictions) == 0:
-        return None  # No face found
+        return None  # No face detected
 
-    # 💥 DUAL-ENGINE AGGRESSIVE LOGIC (Synced with app.py) 💥
+    # 💥 DUAL-ENGINE AGGRESSIVE LOGIC 💥
     avg_score = np.mean(predictions)
 
     # Check if more than 35% of frames look fake (below 0.55)
     fake_frames_count = sum(1 for score in predictions if score < 0.55)
     fake_ratio = fake_frames_count / len(predictions)
 
-    # If average is low OR too many fake frames exist -> IT'S A FAKE
+    # Classification: Low average OR High fake ratio -> FAKE
     if avg_score < 0.55 or fake_ratio > 0.35:
         return "FAKE"
     else:
         return "REAL"
-
 
 def run_survey(folder_path, true_label):
     if not os.path.exists(folder_path):
@@ -92,7 +88,7 @@ def run_survey(folder_path, true_label):
         return 0, 0
 
     videos = [f for f in os.listdir(folder_path) if f.endswith(('.mp4', '.avi', '.mov'))]
-    videos = videos[:10]  # Fakt 10 videos (Test sathi)
+    videos = videos[:10]  # Limit to 10 videos for testing purposes
 
     if len(videos) == 0:
         print(f"⚠️ No videos found in {folder_path}")
@@ -120,7 +116,6 @@ def run_survey(folder_path, true_label):
             print(f"❌ INCORRECT (Detected as {prediction})")
 
     return correct_count, total_valid
-
 
 # --- START SURVEY ---
 print("🚀 STARTING DEEPGUARD SURVEY (DUAL-ENGINE LOGIC) 🚀")

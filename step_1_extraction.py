@@ -5,11 +5,11 @@ import random
 from mtcnn import MTCNN
 import warnings
 import logging
-
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-warnings.filterwarnings('ignore')
 import tensorflow as tf
 
+# --- LOGGING SETUP ---
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+warnings.filterwarnings('ignore')
 tf.get_logger().setLevel(logging.ERROR)
 
 try:
@@ -17,22 +17,21 @@ try:
 except:
     pass
 
-# --- VIDEO SOURCES ---
-# 1. FF++ Videos (35 Random Videos)
+# --- VIDEO SOURCE PATHS ---
+# 1. FaceForensics++ Videos (Subset)
 FFPP_REAL = r'D:\DeepGuard\archive\face++dataset\ffpp_real'
 FFPP_FAKE = r'D:\DeepGuard\archive\face++dataset\ffpp_fake'
 
-# 2. YouTube Videos (All Videos)
+# 2. YouTube / External Videos (All)
 YT_REAL = r'D:\DeepGuard\input_videos\Real'
 YT_FAKE = r'D:\DeepGuard\input_videos\Fake'
 
-# --- OUTPUT ---
+# --- OUTPUT PATHS ---
 OUT_REAL = r'D:\DeepGuard\Dataset\Real'
 OUT_FAKE = r'D:\DeepGuard\Dataset\Fake'
 
 FRAME_SKIP = 15
 detector = MTCNN()
-
 
 def extract_faces(video_folder, output_folder, label, max_videos=None):
     if not os.path.exists(video_folder):
@@ -77,14 +76,14 @@ def extract_faces(video_folder, output_folder, label, max_videos=None):
                     pass
             count += 1
         cap.release()
-        print(f"  -> {video_file}: {saved} faces.")
+        print(f"  -> {video_file}: {saved} faces extracted.")
 
 
 # --- EXECUTION ---
-print("🚀 STARTING ULTIMATE FACE EXTRACTION...")
+print("🚀 STARTING FACE EXTRACTION PIPELINE...")
 extract_faces(FFPP_REAL, OUT_REAL, "Real", max_videos=35)
 extract_faces(YT_REAL, OUT_REAL, "Real_YT", max_videos=None)
 
 extract_faces(FFPP_FAKE, OUT_FAKE, "Fake", max_videos=35)
 extract_faces(YT_FAKE, OUT_FAKE, "Fake_YT", max_videos=None)
-print("\n🎉 EXTRACTION COMPLETE! Run step_1_5 next.")
+print("\n🎉 EXTRACTION COMPLETE! Proceed to step_1_5.")
